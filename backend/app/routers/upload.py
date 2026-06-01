@@ -35,7 +35,7 @@ async def upload_pdf(file: UploadFile = File(...)):
     uploads_dir.mkdir(parents=True, exist_ok=True)  # Ensure folder exists
 
     # Preserve the original filename when saving.
-    save_path = uploads_dir / file.filename  # Full path where file will be written
+    save_path = uploads_dir / Path(file.filename).name  # Full path where file will be written
 
     # Write the file bytes to disk at the computed save path.
     save_path.write_bytes(file_bytes)  # Atomically write bytes to the file

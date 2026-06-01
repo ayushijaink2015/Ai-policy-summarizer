@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST
+from pathlib import Path  # Use pathlib for filesystem paths and operations
 
 # Create a router object that can hold one or more related endpoints.
 router = APIRouter()
@@ -7,7 +8,11 @@ router = APIRouter()
 
 @router.post("/upload", response_model=dict)
 async def upload_pdf(file: UploadFile = File(...)):
-    """Accept a PDF file upload and return the filename and file size."""
+    """Accept a PDF file upload, save it to backend/uploads, and return metadata.
+
+    This endpoint preserves the original filename and returns the filename,
+    the size in bytes, and the saved path on disk.
+    """
     # Ensure the uploaded file is a PDF by checking the content type header.
     if file.content_type != "application/pdf":
         raise HTTPException(
@@ -16,10 +21,24 @@ async def upload_pdf(file: UploadFile = File(...)):
         )
 
     # Read the uploaded file content as bytes.
-    file_bytes = await file.read()
+    file_bytes = await file.read()  # Read entire upload into memory as bytes
 
     # Calculate the file size in bytes.
-    file_size = len(file_bytes)
+    file_size = len(file_bytes)  # Determine number of bytes received
 
-    # Return the filename and size as JSON.
-    return {"filename": file.filename, "size": file_size}
+    # Compute the backend/uploads directory relative to this file.
+    uploads_dir = (
+        Path(__file__).resolve().parent.parent.parent / "uploads"
+    )  # Points to the `backend/uploads` folder
+
+    # Create the uploads directory if it does not already exist.
+    uploads_dir.mkdir(parents=True, exist_ok=True)  # Ensure folder exists
+
+    # Preserve the original filename when saving.
+    save_path = uploads_dir / file.filename  # Full path where file will be written
+
+    # Write the file bytes to disk at the computed save path.
+    save_path.write_bytes(file_bytes)  # Atomically write bytes to the file
+
+    # Return the filename, size, and the saved path as a string.
+    return {"filename": file.filename, "size": file_size, "path": str(save_path)}

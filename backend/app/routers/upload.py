@@ -2,6 +2,9 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST
 from pathlib import Path  # Use pathlib for filesystem paths and operations
 
+# Import the PDF text extraction service.
+from app.services.pdf_service import extract_text_from_pdf
+
 # Create a router object that can hold one or more related endpoints.
 router = APIRouter()
 
@@ -40,5 +43,21 @@ async def upload_pdf(file: UploadFile = File(...)):
     # Write the file bytes to disk at the computed save path.
     save_path.write_bytes(file_bytes)  # Atomically write bytes to the file
 
-    # Return the filename, size, and the saved path as a string.
-    return {"filename": file.filename, "size": file_size, "path": str(save_path)}
+    # Extract text and page information from the saved PDF file.
+    total_pages, extracted_text = extract_text_from_pdf(str(save_path))
+
+    # Calculate the length of extracted text in characters.
+    text_length = len(extracted_text)
+
+    # Get a preview of the extracted text (first 500 characters).
+    text_preview = extracted_text[:500]
+
+    # Return the filename, size, path, and PDF content metadata.
+    return {
+        "filename": file.filename,
+        "size": file_size,
+        "path": str(save_path),
+        "total_pages": total_pages,
+        "text_length": text_length,
+        "preview": text_preview,
+    }

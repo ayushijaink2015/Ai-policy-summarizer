@@ -2,6 +2,8 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST
 from pathlib import Path  # Use pathlib for filesystem paths and operations
 
+
+
 # Import the PDF text extraction service.
 from app.services.pdf_service import extract_text_from_pdf
 

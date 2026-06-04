@@ -50,12 +50,12 @@ def _get_api_key() -> Optional[str]:
     return os.getenv("GEMINI_API_KEY")
 
 
-def summarize_text(text: str, model: str = "models/gemini-1.0") -> str:
+def summarize_text(text: str, model_name: str = "gemini-2.5-flash") -> str:
     """Generate a citizen-friendly summary for `text`.
 
     Args:
         text: The input text to summarize.
-        model: The Gemini model name to use.
+        model_name: The Gemini model name to use.
 
     Returns:
         A summary string with at most 300 words. If the API fails or the
@@ -101,43 +101,25 @@ def summarize_text(text: str, model: str = "models/gemini-1.0") -> str:
     )
 
     try:
-        # Call the Gemini model and ask it to generate text.
-        response = genai.generate_text(
-            model=model,
-            prompt=prompt,
-            max_output_tokens=512,
-        )
+        # Create the new Gemini model object and generate content.
+        model = genai.GenerativeModel(model_name)
+        response = model.generate_content(prompt)
     except Exception:
         logger.exception("Failed to call the Gemini model.")
         return ""
+       
 
-    # Extract text from the response in a way that works across versions.
-    summary: Optional[str] = None
-    if isinstance(response, dict):
-        candidates = response.get("candidates")
-        if candidates and isinstance(candidates, list):
-            first = candidates[0]
-            if isinstance(first, dict):
-                summary = first.get("content") or first.get("output") or first.get("text")
-        if not summary:
-            summary = response.get("output") or response.get("text")
-    else:
-        candidates = getattr(response, "candidates", None)
-        if candidates:
-            first = candidates[0]
-            summary = getattr(first, "content", None) or getattr(first, "output", None) or getattr(first, "text", None)
-        if not summary:
-            summary = getattr(response, "output", None) or getattr(response, "text", None)
-
-    # If the summary is still missing, return an empty string.
-    if not summary:
-        logger.error("Could not parse a summary from the Gemini response.")
+    try:
+        summary_text = response.text
+    except Exception:
+        logger.exception("Failed to read Gemini response.")
         return ""
 
-    # Clean up whitespace and limit the result to 300 words.
-    summary_text = summary.strip()
+   
+    summary_text = summary_text.strip()
+
     words = summary_text.split()
     if len(words) > 300:
-        summary_text = " ".join(words[:300]).rstrip()
+        summary_text = " ".join(words[:300])
 
     return summary_text

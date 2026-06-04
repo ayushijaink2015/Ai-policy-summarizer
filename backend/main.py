@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 
 from app.routers.upload import router as upload_router
+from app.databases.database import engine
+from app.databases.models import Base
+
+
+Base.metadata.create_all(bind=engine)
 
 # Create the FastAPI application instance.
 app = FastAPI()

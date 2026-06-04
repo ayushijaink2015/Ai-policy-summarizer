@@ -3,9 +3,10 @@ from starlette.status import HTTP_400_BAD_REQUEST
 from pathlib import Path
 import logging
 
-# Import the PDF text extraction service and summarizer.
+# Import the PDF text extraction service, summarizer, and database save helper.
 from app.services.pdf_service import extract_text_from_pdf
 from app.services.summarization_service import summarize_text
+from app.services.database_service import get_all_summaries, save_summary
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +60,30 @@ async def upload_pdf(file: UploadFile = File(...)):
     text_preview = extracted_text[:500]
 
     # Generate a citizen-friendly summary using the summarization service.
+    status = "completed"
     try:
         summary = summarize_text(extracted_text)
+        if not summary:
+            status = "failed"
     except Exception:
         logger.exception("Summarization failed for file: %s", save_path)
         summary = ""
+        status = "failed"
+
+    # Save the generated summary into the database with status.
+    saved_summary = save_summary(
+        filename=file.filename,
+        total_pages=total_pages,
+        summary=summary,
+        status=status,
+    )
+
+    if saved_summary is None:
+        logger.error("Failed to save summary record for file: %s", file.filename)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to save summary record to the database.",
+        )
 
     # Close the uploaded file to free resources.
     try:
@@ -72,13 +92,37 @@ async def upload_pdf(file: UploadFile = File(...)):
         # Not critical, just log and continue.
         logger.debug("Failed to close upload file handle")
 
-    # Return consistent metadata about the saved PDF and extracted content.
+    # Return the requested summary metadata, including creation time.
     return {
         "filename": file.filename,
-        "size": file_size,
-        "saved_path": str(save_path),
         "total_pages": total_pages,
-        "text_length": text_length,
-        "text_preview": text_preview,
         "summary": summary,
+        "status": saved_summary.status,
+        "created_at": saved_summary.created_at.isoformat(),
     }
+
+
+@router.get("/summaries", response_model=list)
+async def list_summaries():
+    """Return all saved summary records in newest-first order."""
+    try:
+        # Fetch the summaries from the database helper.
+        summaries = get_all_summaries()
+
+        # Convert each Summary object into a simple JSON-serializable dict.
+        return [
+            {
+                "id": item.id,
+                "filename": item.filename,
+                "total_pages": item.total_pages,
+                "status": item.status,
+                "created_at": item.created_at.isoformat(),
+            }
+            for item in summaries
+        ]
+    except Exception:
+        logger.exception("Failed to load summary records from the database.")
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to retrieve summaries at this time.",
+        )

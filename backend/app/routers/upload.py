@@ -104,12 +104,13 @@ async def upload_pdf(file: UploadFile = File(...)):
 
 @router.get("/summaries", response_model=list)
 async def list_summaries():
-    """Return all saved summary records in newest-first order."""
+    """Return all saved summary records from the database."""
     try:
-        # Fetch the summaries from the database helper.
+        # Call the helper that loads all summary rows from the database.
         summaries = get_all_summaries()
 
-        # Convert each Summary object into a simple JSON-serializable dict.
+        # If there are no summaries, `summaries` will be an empty list.
+        # The list comprehension below will then return an empty list too.
         return [
             {
                 "id": item.id,
@@ -121,6 +122,8 @@ async def list_summaries():
             for item in summaries
         ]
     except Exception:
+        # Log the failure and raise a FastAPI HTTPException so the API
+        # caller gets a proper 500 error response with a message.
         logger.exception("Failed to load summary records from the database.")
         raise HTTPException(
             status_code=500,

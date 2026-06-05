@@ -162,6 +162,9 @@ venv.bak/
 uploads/
 backend/uploads/
 
+# SQLite database file used by the app
+summaries.db
+
 # Spyder project settings
 .spyderproject
 .spyproject

@@ -85,6 +85,7 @@ async def list_summaries():
             for item in summaries
         ]
     except Exception:
+        
         logger.exception("Failed to load summary records from the database.")
         raise HTTPException(
             status_code=500,

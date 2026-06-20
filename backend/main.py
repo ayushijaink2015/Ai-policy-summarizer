@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.upload import router as upload_router
 from app.databases.database import engine
@@ -9,6 +10,18 @@ Base.metadata.create_all(bind=engine)
 
 # Create the FastAPI application instance.
 app = FastAPI()
+
+# Enable CORS for the frontend.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Register the upload router so /upload is available on the app.
 app.include_router(upload_router)

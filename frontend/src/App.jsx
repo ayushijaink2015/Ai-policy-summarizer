@@ -1,13 +1,7 @@
-import UploadForm from "./components/UploadForm";
+import HomePage from "./pages/HomePage";
 
 function App() {
-  return (
-    <>
-      <h1>AI Policy Summarizer</h1>
-
-      <UploadForm />
-    </>
-  );
+  return <HomePage />;
 }
 
 export default App;

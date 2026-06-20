@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { uploadPdf } from "../services/api";
+import SummaryCard from "./SummaryCard";
 
 function UploadForm() {
   const [file, setFile] = useState(null);
-  const [summary, setSummary] = useState("");
+  const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,7 +20,6 @@ function UploadForm() {
     }
 
     setLoading(true);
-    setSummary("");
     setError("");
 
     const formData = new FormData();
@@ -29,10 +29,9 @@ function UploadForm() {
       console.log("Uploading file...");
 
       const result = await uploadPdf(formData);
+      setSummaryData(result);
 
       console.log("Response received:", result);
-
-      setSummary(result.summary || "No summary returned.");
     } catch (error) {
       console.error("Upload error:", error);
 
@@ -68,14 +67,21 @@ function UploadForm() {
         {loading ? "Uploading..." : "Upload"}
       </button>
 
+      {summaryData && (
+        <div className="mt-6">
+          <SummaryCard
+            filename={summaryData.filename}
+            status={summaryData.status}
+            createdAt={summaryData.created_at}
+            summary={summaryData.summary}
+          />
+        </div>
+      )}
+
       <br />
       <br />
 
       {error && <div style={{ color: "red" }}>{error}</div>}
-
-      <h3>Summary</h3>
-
-      <p>{summary}</p>
     </>
   );
 }

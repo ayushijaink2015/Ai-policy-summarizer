@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { uploadPdf } from "../services/api";
 import SummaryCard from "./SummaryCard";
+import LoadingSpinner from "./LoadingSpinner";
 
 function UploadForm() {
   const [file, setFile] = useState(null);
   const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
 
   function handleFileChange(event) {
     setFile(event.target.files[0] ?? null);
@@ -66,6 +68,8 @@ function UploadForm() {
       <button onClick={handleUpload} disabled={loading}>
         {loading ? "Uploading..." : "Upload"}
       </button>
+
+      {loading && <LoadingSpinner />}
 
       {summaryData && (
         <div className="mt-6">

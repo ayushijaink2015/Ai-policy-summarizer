@@ -3,7 +3,7 @@
 This module defines the base class used by all SQLAlchemy models.
 """
 from __future__ import annotations
-
+from sqlalchemy import Boolean
 from sqlalchemy import CheckConstraint, Column, DateTime, Integer, String, Text, func
 from sqlalchemy.orm import declarative_base
 
@@ -47,3 +47,22 @@ class Summary(Base):
 
 
 __all__ = ["Base", "Summary"]
+
+class User(Base):
+    """Database model for users."""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    username = Column(String, unique=True, nullable=False)
+
+    email = Column(String, unique=True, nullable=False)
+
+    hashed_password = Column(String, nullable=False)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )

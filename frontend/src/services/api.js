@@ -9,3 +9,10 @@ export async function uploadPdf(formData) {
 
   return response.data;
 }
+export async function getSummaries() {
+  const response = await axios.get(
+    "http://127.0.0.1:8000/summaries"
+  );
+
+  return response.data;
+}
